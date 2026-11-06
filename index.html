@@ -128,7 +128,7 @@ document.querySelector('#authSetupOverlay')?.addEventListener('click',e=>{if(e.t
     // Show clear openings where no timed item occupies the hour.
     times.forEach((t,i)=>{const [h,m]=t.split(':').map(Number),mins=h*60+m,covered=dayItems.some(x=>{const [eh,em]=x.time.split(':').map(Number),s=eh*60+em;return mins>=s&&mins<s+(x.duration||60)});if(!covered&&i%2===0){const slot=root.children[i].querySelector('.time-slot'),free=document.createElement('div');free.className='free-slot';free.innerHTML='<i></i>空檔 · 適合安排一件重要的事';slot.appendChild(free)}});
     const now=new Date(),isToday=dayOffset===0&&now.getHours()>=8&&now.getHours()<18;if(isToday){const line=document.createElement('div');line.className='now-line';line.style.top=`${(now.getHours()-8)*65+now.getMinutes()/60*65+1}px`;line.innerHTML='<span class="now-label">現在</span>';root.appendChild(line)}
-    const events=dayItems.filter(x=>x.type==='event').length;$('#eventStat').textContent=events;$('#taskStat').textContent=items.filter(isTask&&!isDone).length;
+    const events=dayItems.filter(x=>x.type==='event').length;$('#eventStat').textContent=events;$('#taskStat').textContent=items.filter(x=>isTask(x)&&!isDone(x)).length;
     const busy=dayItems.reduce((n,x)=>n+(x.duration||60),0),free=Math.max(0,10-busy/60);$('#freeStat').textContent=`${Number.isInteger(free)?free:free.toFixed(1)} 小時`;
     $('#welcomeText').textContent=dayOffset===0?`今天有 ${events} 個行程，看看還有哪些空檔可以好好運用。`:`${dateLabel(date)} · 看看今天的安排。`;
   }
