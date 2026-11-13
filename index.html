@@ -43,10 +43,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAAzHUHkkFfpp2BlDldQgLwUrQp4IH-gDo",
-  authDomain: "daylight-planner-1151106.firebaseapp.com",
-  projectId: "daylight-planner-1151106",
-  appId: "1:224566872659:web:59fcc218df87d8f5e014a6"
+  apiKey: "AIzaSyB34axVpnfzAPH5aAOPymWIyueXrR80kPE",
+  authDomain: "daylight-planner-auth-1151106.firebaseapp.com",
+  projectId: "daylight-planner-auth-1151106",
+  appId: "1:189698207550:web:8e458a70a34af931a2066f"
 };
 const firebaseConfigured = Object.values(FIREBASE_CONFIG).every(value => value && !value.startsWith('YOUR_'));
 let auth = null;
@@ -60,103 +60,3 @@ if (firebaseConfigured) {
     document.querySelector('#googleLoginBtn')?.addEventListener('click', async () => {
       try { await signInWithPopup(auth, provider); }
       catch(error) {
-        if (error.code === 'auth/popup-blocked') { await signInWithRedirect(auth, provider); return; }
-        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') authToast(error.message || 'Google 登入失敗，請稍後重試。');
-      }
-    });
-    document.querySelector('#signOutBtn')?.addEventListener('click', async () => { try { await signOut(auth); } catch(error) { authToast(error.message || '登出失敗。'); } });
-    onAuthStateChanged(auth, user => {
-      const login=document.querySelector('#googleLoginBtn'), logout=document.querySelector('#signOutBtn');
-      if (login) login.hidden=Boolean(user); if (logout) logout.hidden=!user;
-      const name=document.querySelector('#accountName'), hint=document.querySelector('#accountHint'), profile=document.querySelector('#profileName'), avatar=document.querySelector('#profileAvatar'), space=document.querySelector('#profileSpace');
-      if(name) name.textContent=user?.displayName || '訪客模式';
-      if(hint) hint.textContent=user?.email || '登入後可同步個人資料';
-      if(profile) profile.textContent=user?.displayName || '林同學';
-      if(avatar) { avatar.textContent=user?.displayName?.trim()?.charAt(0) || '林'; if(user?.photoURL){avatar.style.backgroundImage=`url("${user.photoURL}")`;avatar.style.backgroundSize='cover';avatar.style.color='transparent';} else {avatar.style.backgroundImage='';avatar.style.color='';} }
-      if(space) space.textContent=user ? 'Google 帳戶' : '個人空間';
-    });
-    getRedirectResult(auth).catch(error => authToast(error.message || 'Google 登入未完成。'));
-  } catch(error) { console.error('Firebase initialization failed:', error); authToast('Firebase 設定無效，請確認 Web App 設定。'); }
-} else {
-  document.querySelector('#googleLoginBtn')?.addEventListener('click',()=>{const modal=document.querySelector('#authSetupOverlay');modal?.classList.add('open');document.querySelector('#authSetupMessage').textContent='目前尚未填入 Firebase Web App 設定，因此沒有送出登入要求。';});
-}
-document.querySelector('#closeAuthSetup')?.addEventListener('click',()=>document.querySelector('#authSetupOverlay')?.classList.remove('open'));
-document.querySelector('#dismissAuthSetup')?.addEventListener('click',()=>document.querySelector('#authSetupOverlay')?.classList.remove('open'));
-document.querySelector('#authSetupOverlay')?.addEventListener('click',e=>{if(e.target.id==='authSetupOverlay')e.currentTarget.classList.remove('open')});
-</script>
-<script>
-(() => {
-  const iconCheck='<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>';
-  const baseDate = new Date(); baseDate.setHours(0,0,0,0);
-  const iso=(d)=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)};
-  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
-  const fmt=(d,opt)=>new Intl.DateTimeFormat('zh-TW',opt).format(d);
-  const getOffsetDate=(offset)=>iso(addDays(baseDate,offset));
-  const initial=[
-    {id:1,type:'event',title:'專題討論 — 期末提案',date:getOffsetDate(0),time:'09:00',duration:60,priority:'normal',note:'和組員確認提案方向',color:'',done:false},
-    {id:2,type:'task',title:'整理使用者訪談筆記',date:getOffsetDate(0),time:'11:00',duration:60,priority:'high',note:'完成後分享給專題組',color:'mint',done:false},
-    {id:3,type:'event',title:'午餐時間',date:getOffsetDate(0),time:'12:00',duration:60,priority:'normal',note:'',color:'peach',done:false},
-    {id:4,type:'event',title:'英文課程',date:getOffsetDate(0),time:'14:00',duration:90,priority:'normal',note:'記得帶課本',color:'',done:false},
-    {id:5,type:'task',title:'繳交統計學作業',date:getOffsetDate(0),time:'',duration:60,priority:'high',note:'今天晚上 11:59 截止',color:'',done:false},
-    {id:6,type:'task',title:'回覆社團活動報名',date:'',time:'',duration:30,priority:'low',note:'',color:'',done:false},
-    {id:7,type:'task',title:'閱讀產品設計第 4 章',date:'',time:'',duration:60,priority:'normal',note:'',color:'',done:false}
-  ];
-  let items; try{items=JSON.parse(localStorage.getItem('daylight-items')||'null')||initial}catch{items=initial}
-  let dayOffset=0, filter='all';
-  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-  const dateLabel=(date)=>fmt(new Date(date+'T12:00:00'),{month:'long',day:'numeric',weekday:'long'});
-  function persist(){localStorage.setItem('daylight-items',JSON.stringify(items));render()}
-  function isTask(x){return x.type==='task'}
-  function forDate(date){return items.filter(x=>x.date===date)}
-  function renderTop(){
-    const d=addDays(baseDate,dayOffset), titleDate=fmt(d,{weekday:'long',month:'long',day:'numeric'});
-    $('#todayDate').textContent=fmt(baseDate,{year:'numeric',month:'long',day:'numeric'});
-    $('#greeting').textContent=fmt(d,{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
-    $('#pageTitle').innerHTML=(dayOffset===0?'早安，林同學':'嗨，林同學')+' <span aria-hidden="true">☀️</span>';
-    $('#welcomeText').textContent=dayOffset===0?'把今天安排得剛剛好，也留點空間給自己。':`${titleDate} · 看看今天的安排。`;
-    $('#timelineSub').textContent=`${titleDate} · 早上 8:00 – 下午 6:00`;
-    $('#dayLabel').textContent=dayOffset===0?'今天':dayOffset===1?'明天':dayOffset===-1?'昨天':fmt(d,{month:'numeric',day:'numeric'});
-    $('#crumbTitle').textContent=dayOffset===0?'今日總覽':`${fmt(d,{month:'numeric',day:'numeric'})} 行程`;
-  }
-  function renderTimeline(){
-    const date=getOffsetDate(dayOffset), dayItems=forDate(date).filter(x=>x.time).sort((a,b)=>a.time.localeCompare(b.time));
-    const times=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-    const root=$('#timeline');root.innerHTML='';
-    times.forEach((t,i)=>{const row=document.createElement('div');row.className='time-row';row.innerHTML=`<div class="time-label">${Number(t.slice(0,2))<12?'上午':'下午'} ${Number(t.slice(0,2))%12||12}:00</div><div class="time-slot" data-time="${t}"></div>`;root.appendChild(row)});
-    const start=8*60;
-    dayItems.forEach(item=>{const [h,m]=item.time.split(':').map(Number),mins=h*60+m,idx=Math.floor((mins-start)/60);if(idx<0||idx>=times.length)return;const row=root.children[idx],slot=row.querySelector('.time-slot'),event=document.createElement('div');event.className=`event ${item.color||''}`;event.style.top=`${(m/60)*65+5}px`;event.style.minHeight=`${Math.max(46,Math.min(item.duration||60,120)*.78)}px`;event.innerHTML=`<div><h3>${escapeHtml(item.title)}</h3><p>${item.time} · ${durationText(item.duration||60)}</p></div><span class="tag">${item.type==='event'?'行程':'任務'}</span>`;slot.appendChild(event)});
-    // Show clear openings where no timed item occupies the hour.
-    times.forEach((t,i)=>{const [h,m]=t.split(':').map(Number),mins=h*60+m,covered=dayItems.some(x=>{const [eh,em]=x.time.split(':').map(Number),s=eh*60+em;return mins>=s&&mins<s+(x.duration||60)});if(!covered&&i%2===0){const slot=root.children[i].querySelector('.time-slot'),free=document.createElement('div');free.className='free-slot';free.innerHTML='<i></i>空檔 · 適合安排一件重要的事';slot.appendChild(free)}});
-    const now=new Date(),isToday=dayOffset===0&&now.getHours()>=8&&now.getHours()<18;if(isToday){const line=document.createElement('div');line.className='now-line';line.style.top=`${(now.getHours()-8)*65+now.getMinutes()/60*65+1}px`;line.innerHTML='<span class="now-label">現在</span>';root.appendChild(line)}
-    const events=dayItems.filter(x=>x.type==='event').length;$('#eventStat').textContent=events;$('#taskStat').textContent=items.filter(x=>isTask(x)&&!isDone(x)).length;
-    const busy=dayItems.reduce((n,x)=>n+(x.duration||60),0),free=Math.max(0,10-busy/60);$('#freeStat').textContent=`${Number.isInteger(free)?free:free.toFixed(1)} 小時`;
-    $('#welcomeText').textContent=dayOffset===0?`今天有 ${events} 個行程，看看還有哪些空檔可以好好運用。`:`${dateLabel(date)} · 看看今天的安排。`;
-  }
-  function isDone(x){return x.done}
-  function renderTasks(){
-    const tasks=items.filter(isTask),today=getOffsetDate(dayOffset),list=tasks.filter(x=>filter==='today'?x.date===today:filter==='unscheduled'?!x.date: true);
-    $('#allCount').textContent=tasks.length;$('#todayCount').textContent=tasks.filter(x=>x.date===today).length;$('#unscheduledCount').textContent=tasks.filter(x=>!x.date).length;$('#navTaskCount').textContent=tasks.filter(x=>!x.done).length;
-    const root=$('#taskList');if(!list.length){root.innerHTML='<div class="empty">這裡還沒有任務，新增一件試試看 ✨</div>';return}
-    root.innerHTML=list.map(x=>`<div class="task ${x.done?'done-task':''}"><button class="check ${x.done?'done':''}" data-check="${x.id}" aria-label="${x.done?'標記未完成':'完成任務'}">${x.done?iconCheck:''}</button><div class="task-copy"><strong>${escapeHtml(x.title)}</strong><small><i class="priority ${x.priority==='low'?'low':''}"></i>${x.date?`${dateLabel(x.date)}${x.time?` · ${x.time}`:''}`:'尚未安排'}${x.priority==='high'?' · 重要':''}</small></div><span class="task-time">${durationText(x.duration)}</span></div>`).join('');
-    $$('[data-check]').forEach(btn=>btn.addEventListener('click',()=>{const item=items.find(x=>x.id===Number(btn.dataset.check));item.done=!item.done;persist();if(item.done)toast('太好了！完成一件事 ✨')}));
-  }
-  function renderWeek(){const mon=new Date(baseDate);mon.setDate(mon.getDate()-(mon.getDay()+6)%7);$('#weekStrip').innerHTML=Array.from({length:7},(_,i)=>{const d=addDays(mon,i),date=iso(d),active=date===getOffsetDate(dayOffset),has=forDate(date).length>0;return `<div class="weekday ${active?'today':''}"><span>${fmt(d,{weekday:'narrow'})}</span><b>${d.getDate()}</b>${has?'<i class="mark"></i>':'<i style="height:4px"></i>'}</div>`}).join('')}
-  function render(){renderTop();renderTimeline();renderTasks();renderWeek()}
-  function durationText(m){if(!m)return '未估時';return m<60?`${m} 分鐘`:m%60?`${Math.floor(m/60)}.5 小時`:`${m/60} 小時`}
-  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2300)}
-  function openModal(type='task'){ $('#itemForm').reset();$('#itemDate').value=getOffsetDate(dayOffset);$('#itemType').value=type;$$('.type-switch button').forEach(b=>b.classList.toggle('chosen',b.dataset.type===type));$('#modalOverlay').classList.add('open');setTimeout(()=>$('#itemTitle').focus(),100)}
-  function closeModal(){$('#modalOverlay').classList.remove('open')}
-  $('#addOpen').addEventListener('click',()=>openModal());$('#taskAdd').addEventListener('click',()=>openModal());$('#closeModal').addEventListener('click',closeModal);$('#cancelModal').addEventListener('click',closeModal);$('#modalOverlay').addEventListener('click',e=>{if(e.target.id==='modalOverlay')closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-  $$('.type-switch button').forEach(b=>b.addEventListener('click',()=>{$$('.type-switch button').forEach(x=>x.classList.remove('chosen'));b.classList.add('chosen');$('#itemType').value=b.dataset.type}));
-  $('#itemForm').addEventListener('submit',e=>{e.preventDefault();const type=$('#itemType').value,date=$('#itemDate').value,time=$('#itemTime').value;items.push({id:Date.now(),type,title:$('#itemTitle').value.trim(),date,time,duration:Number($('#itemDuration').value),priority:$('#itemPriority').value,note:$('#itemNote').value.trim(),color:type==='event'?'':'mint',done:false});persist();closeModal();toast(type==='event'?'行程已加入時間軸':'任務已記下來，不用再惦記')});
-  $('#prevDay').addEventListener('click',()=>{dayOffset--;render()});$('#nextDay').addEventListener('click',()=>{dayOffset++;render()});
-  $$('.task-tabs button').forEach(b=>b.addEventListener('click',()=>{$$('.task-tabs button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');filter=b.dataset.filter;renderTasks()}));
-  function nav(view){$$('.nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='week'){dayOffset=0;toast('週視圖已準備好，點選日期可查看每日安排');render()}if(view==='tasks'){filter='all';$$('.task-tabs button').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));$('#taskList').scrollIntoView({behavior:'smooth',block:'center'});toast('這裡整理了所有待辦任務')}if(view==='today'){dayOffset=0;render()}}
-  $$('.nav button[data-view]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.view)));$$('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
-  $('#bellBtn').addEventListener('click',()=>toast('目前沒有新的提醒'));$('#settingsBtn').addEventListener('click',()=>toast('偏好設定即將推出'));
-  render();
-})();
-</script>
-</body>
-</html>
