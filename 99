@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f8f9fc">
+<title>Daylight｜行程與任務</title>
+<style>
+:root {
+  --ink:#1e293b; --muted:#8290a5; --line:#edf0f5;
+  --purple:#6859d9; --lav:#f0efff; --mint:#eaf8f2;
+  --peach:#fff2e7; --bg:#f8f9fc; --white:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+outline:2px solid #958bea;outline-offset:2px}
+.app{min-height:100vh;display:grid;grid-template-columns:238px 1fr}
+.sidebar{background:white;border-right:1px solid var(--line);padding:28px 18px;display:flex;flex-direction:column;gap:32px}
+.brand{display:flex;align-items:center;gap:11px;padding:0 9px;font-weight:750;font-size:18px}
+.brand-mark{width:34px;height:34px;border-radius:12px;background:linear-gradient(145deg,#897cf3,#6452d4);display:grid;place-items:center;color:white;font-size:20px}
+.nav-label{font-size:10px;letter-spacing:1.2px;color:#a4adbb;font-weight:700;padding:0 12px;margin-bottom:9px}
+.nav{display:grid;gap:5px}
+.nav button{border:0;background:transparent;color:#718096;text-align:left;padding:11px 12px;border-radius:10px;display:flex;align-items:center;gap:12px;font-weight:550;width:100%}
+.nav button:hover{background:#f7f7fb}
+.nav button.active{background:var(--lav);color:var(--purple);font-weight:700}
+.count{margin-left:auto;font-size:11px;color:#a0aabc}
+.sidebar-bottom{margin-top:auto}
+.profile{display:flex;align-items:center;gap:11px;border-top:1px solid var(--line);padding:20px 8px 0}
+.avatar{width:36px;height:36px;border-radius:50%;background:#f7dcca;color:#996247;display:grid;place-items:center;font-weight:700}
+.profile small{display:block;color:var(--muted);font-size:11px}
+.main{padding:30px clamp(20px,4vw,60px) 48px;max-width:1440px;width:100%;margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.crumb{color:var(--muted);font-size:12px}
+.top-actions{display:flex;gap:10px}
+.icon-btn,.date-pill{border:1px solid var(--line);border-radius:10px;background:white;color:#657186;padding:9px 13px}
+.welcome{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;gap:12px}
+.eyebrow{color:var(--purple);font-size:11px;font-weight:750;letter-spacing:1.3px}
+.welcome h1{font-size:clamp(25px,3vw,34px);margin:5px 0 6px}
+.welcome p{margin:0;color:var(--muted);font-size:13px}
+.primary{border:0;border-radius:11px;background:var(--purple);color:white;padding:12px 17px;font-weight:650;box-shadow:0 8px 18px #6859d933}
+.primary:hover{background:#5849c7}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:23px}
+.stat{background:white;border:1px solid var(--line);border-radius:14px;padding:17px 19px;display:flex;align-items:center;gap:14px}
+.stat-icon{width:40px;height:40px;border-radius:12px;background:var(--lav);color:var(--purple);display:grid;place-items:center;font-size:19px}
+.stat:nth-child(2) .stat-icon{background:var(--mint);color:#43a87c}
+.stat:nth-child(3) .stat-icon{background:var(--peach);color:#df985e}
+.stat strong{font-size:20px}
+.stat span{display:block;font-size:11px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:18px;align-items:start}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 16px #26324b05}
+.panel-head{padding:19px 20px 15px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.panel-title{font-size:14px;font-weight:720}
+.panel-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.day-controls{display:flex;align-items:center;gap:8px}
+.day-controls button{border:1px solid var(--line);background:white;border-radius:8px;width:28px;height:28px;color:#7d8797}
+.day-label{font-size:11px;color:#69768b;min-width:85px;text-align:center}
+.timeline{padding:2px 20px 20px}
+.time-row{display:grid;grid-template-columns:52px 1fr;min-height:68px}
+.time-label{font-size:10px;color:#a0aabc;transform:translateY(-6px)}
+.time-slot{border-top:1px solid #f0f2f6;position:relative}
+.event{position:relative;margin:6px 0;padding:9px 11px;border-radius:10px;border-left:3px solid #796de1;background:#f1f0ff;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.event.mint{background:var(--mint);border-color:#60b68f}
+.event.peach{background:var(--peach);border-color:#e8a36c}
+.event h3{font-size:11px;margin:0 0 2px}
+.event p{font-size:10px;color:#7e899d;margin:0}
+.event button,.task-actions button{border:0;background:transparent;color:#8993a3;padding:3px;font-size:12px}
+.task-tabs{display:flex;padding:0 20px 12px;gap:16px;border-bottom:1px solid var(--line)}
+.task-tabs button{border:0;background:transparent;padding:0 0 8px;color:#9aa4b3;font-size:11px}
+.task-tabs button.selected{color:var(--purple);font-weight:700;border-bottom:2px solid var(--purple)}
+.task-list{padding:4px 18px}
+.task{display:flex;align-items:flex-start;gap:10px;padding:13px 2px;border-bottom:1px solid #f2f3f7}
+.task:last-child{border:0}
+.check{flex:none;width:18px;height:18px;border:1.5px solid #d3d9e3;border-radius:6px;background:white;color:white;margin-top:1px}
+.check.done{background:#6fbe99;border-color:#6fbe99}
+.task-copy{min-width:0;flex:1}
+.task-copy strong{font-size:11px;display:block;overflow-wrap:anywhere}
+.task-copy small{font-size:10px;color:#9aa4b3;display:block;margin-top:4px}
+.task.done-task strong{text-decoration:line-through;color:#aeb6c2}
+.task-actions{display:flex;gap:2px}
+.priority{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ec9c66;margin-right:4px}
+.priority.low{background:#75b999}
+.empty{padding:28px;text-align:center;color:#9aa4b3;font-size:12px}
+.week{display:flex;justify-content:space-between;padding:0 20px 17px;gap:6px}
+.weekday{display:grid;gap:7px;justify-items:center;font-size:9px;color:#a0aabc}
+.weekday b{width:29px;height:29px;border-radius:10px;display:grid;place-items:center;font-size:10px;color:#69768b}
+.weekday.today b{background:var(--purple);color:white}
+.weekday .mark{width:4px;height:4px;background:#8a7fee;border-radius:50%}
+.week-panel{margin-top:16px}
+.week-note{margin:0 20px 15px;background:#f8f7ff;border-radius:10px;padding:10px 12px;color:#7d72cb;font-size:10px}
+.text-link{border:0;background:transparent;color:var(--purple);font-size:11px;font-weight:650}
+.footer-tip{text-align:center;color:#a0aaba;font-size:10px;margin-top:18px}
+.overlay{position:fixed;inset:0;background:#17203366;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.overlay.open{display:flex}
+.modal{background:white;width:min(100%,440px);max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-shadow:0 24px 80px #1118273d}
+.modal-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.modal h2{margin:0;font-size:19px}
+.modal-top p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.close{border:0;background:#f5f6f9;border-radius:9px;width:30px;height:30px;color:#6e7a8d;font-size:18px}
+.type-switch{display:flex;background:#f5f6fa;padding:4px;border-radius:10px;margin-bottom:18px}
+.type-switch button{flex:1;border:0;background:transparent;border-radius:8px;color:#8792a2;padding:8px;font-size:11px}
+.type-switch button.chosen{background:white;color:var(--purple);box-shadow:0 2px 8px #26324b12}
+.field{margin-bottom:14px}
+.field label{display:block;color:#68758a;font-size:10px;font-weight:650;margin-bottom:6px}
+.field input,.field select,.field textarea{border:1px solid #e6e9ef;border-radius:9px;width:100%;padding:10px 11px;color:var(--ink);background:white;font-size:12px}
+.field textarea{resize:vertical;min-height:60px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.secondary{border:1px solid var(--line);background:white;border-radius:10px;padding:10px 14px;color:#738095;font-size:11px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);opacity:0;background:#202b3c;color:white;border-radius:10px;padding:11px 16px;font-size:12px;z-index:20;transition:.25s;pointer-events:none}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.account-area{padding:12px 9px;border:1px solid var(--line);border-radius:13px;background:#fbfbfe}
+.account-area button{width:100%;border:1px solid var(--line);background:white;border-radius:9px;padding:8px;font-size:10px;margin-top:8px;color:#586579}
+.account-area small{display:block;color:var(--muted);font-size:10px}
+@media(max-width:960px){
+.app{grid-template-columns:70px 1fr}.sidebar{padding:24px 10px;align-items:center}
+.brand-name,.nav-label,.nav button span,.profile-copy{display:none}
+.nav button{width:46px;height:46px;justify-content:center;padding:0}
+.profile{padding:16px 0 0}.grid{grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr)}
+}
+@media(max-width:700px){
+.app{display:block;padding-bottom:65px}
+.sidebar{position:fixed;z-index:5;bottom:0;left:0;right:0;height:62px;border-top:1px solid var(--line);border-right:0;padding:6px 14px;display:block}
+.brand,.sidebar-bottom,.nav-label{display:none}
+.nav{display:flex;justify-content:space-around}
+.nav button{width:48px;height:48px}
+.main{padding:21px 16px 35px}
+.topbar{margin-bottom:20px}.date-pill{display:none}
+.welcome{align-items:center}.welcome h1{font-size:24px}
+.primary{padding:10px 12px;font-size:11px}
+.summary{gap:8px;margin-bottom:15px}
+.stat{padding:11px 9px;gap:8px;min-width:0}
+.stat-icon{width:32px;height:32px;font-size:15px}
+.stat strong{font-size:16px}.stat span{font-size:9px}
+.grid{grid-template-columns:1fr;gap:14px}
+.panel-head{padding:16px 15px 12px}
+.timeline{padding:2px 14px 17px}
+.time-row{grid-template-columns:45px 1fr;min-height:62px}
+.task-tabs{padding-left:15px}.task-list{padding:4px 14px}
+.week-panel{margin-top:14px}
+.field-row{gap:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">☀</div><span class="brand-name">daylight</span></div>
+  <div>
+    <div class="nav-label">工作空間</div>
+    <nav class="nav">
+      <button class="active" data-view="today">▦ <span>今日</span></button>
+      <button data-view="tasks">☷ <span>所有任務</span><span class="count" id="navTaskCount">0</span></button>
+      <button data-view="week">▦ <span>週視圖</span></button>
+    </nav>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="nav-label">偏好設定</div>
+    <nav class="nav"><button id="settingsBtn">⚙ <span>設定</span></button></nav>
+    <div class="account-area">
+      <b id="accountName">訪客模式</b>
+      <small id="accountHint">資料保存在目前裝置</small>
+      <button id="googleLoginBtn">使用 Google 登入</button>
+      <button id="signOutBtn" hidden>登出</button>
+    </div>
+    <div class="profile"><div class="avatar" id="profileAvatar">林</div><div class="profile-copy"><b id="profileName">林同學</b><small>個人空間</small></div></div>
+  </div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <div class="crumb">我的空間 / <b id="crumbTitle">今日總覽</b></div>
+  <div class="top-actions"><button class="date-pill" id="todayDate"></button><button class="icon-btn" id="bellBtn">♧</button></div>
+</header>
+<section class="welcome">
+  <div><div class="eyebrow" id="greeting"></div><h1 id="pageTitle">早安，同學 ☀️</h1><p id="welcomeText"></p></div>
+  <button class="primary" id="addOpen">＋ 新增項目</button>
+</section>
+<section class="summary">
+  <div class="stat"><div class="stat-icon">▦</div><div><strong id="eventStat">0</strong><span>今日行程</span></div></div>
+  <div class="stat"><div class="stat-icon">✓</div><div><strong id="taskStat">0</strong><span>待完成任務</span></div></div>
+  <div class="stat"><div class="stat-icon">◷</div><div><strong id="freeStat">0 小時</strong><span>可運用空檔</span></div></div>
+</section>
+
+<div class="grid">
+<div>
+<section class="panel">
+  <div class="panel-head">
+    <div><div class="panel-title">今天的時間軸</div><div class="panel-sub" id="timelineSub"></div></div>
+    <div class="day-controls"><button id="prevDay">‹</button><div class="day-label" id="dayLabel">今天</div><button id="nextDay">›</button></div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</section>
+<section class="panel week-panel">
+  <div class="panel-head"><div><div class="panel-title">本週概覽</div><div class="panel-sub">慢慢安排，也給自己留點空白</div></div><button class="text-link" data-nav="week">查看週視圖 →</button></div>
+  <div class="week" id="weekStrip"></div>
+  <div class="week-note">✧ 記得為自己留一點休息時間。</div>
+</section>
+</div>
+<div>
+<section class="panel tasks-panel">
+  <div class="panel-head"><div><div class="panel-title">待辦任務</div><div class="panel-sub">記下來，就不用一直惦記</div></div><button class="text-link" id="taskAdd">＋ 新增</button></div>
+  <div class="task-tabs">
+    <button class="selected" data-filter="all">全部 <span id="allCount">0</span></button>
+    <button data-filter="today">今天 <span id="todayCount">0</span></button>
+    <button data-filter="unscheduled">未排程 <span id="unscheduledCount">0</span></button>
+  </div>
+  <div class="task-list" id="taskList"></div>
+</section>
+<p class="footer-tip">完成一件小事，也是很棒的開始 ✨</p>
+</div>
+</div>
+</main>
+</div>
+
+<div class="overlay" id="modalOverlay" role="dialog" aria-modal="true">
+<form class="modal" id="itemForm">
+  <div class="modal-top"><div><h2 id="modalTitle">新增項目</h2><p>先記下來，細節可以稍後再補。</p></div><button class="close" type="button" id="closeModal">×</button></div>
+  <div class="type-switch">
+    <button type="button" class="chosen" data-type="task">待辦任務</button>
+    <button type="button" data-type="event">行程</button>
+  </div>
+  <input type="hidden" id="itemType" value="task">
+  <input type="hidden" id="editId">
+  <div class="field"><label for="itemTitle">名稱 *</label><input id="itemTitle" required maxlength="80" placeholder="例如：準備下週報告"></div>
+  <div class="field-row">
+    <div class="field"><label for="itemDate">日期</label><input id="itemDate" type="date"></div>
+    <div class="field"><label for="itemTime">開始時間</label><input id="itemTime" type="time"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label for="itemDuration">預估時間</label><select id="itemDuration"><option value="30">30 分鐘</option><option value="60" selected>1 小時</option><option value="90">1.5 小時</option><option value="120">2 小時</option><option value="180">3 小時</option></select></div>
+    <div class="field"><label for="itemPriority">優先級</label><select id="itemPriority"><option value="normal">一般</option><option value="high">重要</option><option value="low">有空再做</option></select></div>
+  </div>
+  <div class="field"><label for="itemNote">備註（選填）</label><textarea id="itemNote" placeholder="補充一些細節…"></textarea></div>
+  <div class="modal-actions"><button type="button" class="secondary" id="cancelModal">取消</button><button class="primary" type="submit">儲存項目</button></div>
+</form>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = 'daylight_planner_v2';
+const today = new Date();
+const dateKey = d => {
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
+const parseDate = s => {
+  const [y,m,d]=s.split('-').map(Number);
+  return new Date(y,m-1,d);
+};
+const addDays = (d,n) => { const x=new Date(d);x.setDate(x.getDate()+n);return x; };
+const escapeHTML = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2));
+const fmt = d => `${d.getMonth()+1} 月 ${d.getDate()} 日`;
+const weekday = d => ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][d.getDay()];
+
+let selectedDate = new Date(today.getFullYear(),today.getMonth(),today.getDate());
+let filter = 'all';
+let currentView = 'today';
+let items = [];
+let toastTimer;
+
+function seedData(){
+  const day=dateKey(today);
+  return [
+    {id:uid(),type:'event',title:'晨間整理與規劃',date:day,time:'08:30',duration:30,priority:'normal',note:'',done:false},
+    {id:uid(),type:'event',title:'專題討論會議',date:day,time:'10:00',duration:60,priority:'high',note:'確認專題進度',done:false},
+    {id:uid(),type:'event',title:'午餐與休息',date:day,time:'12:00',duration:60,priority:'low',note:'',done:false},
+    {id:uid(),type:'task',title:'整理課堂筆記',date:day,time:'14:00',duration:60,priority:'normal',note:'',done:false},
+    {id:uid(),type:'task',title:'完成報告初稿',date:day,time:'',duration:90,priority:'high',note:'',done:false},
+    {id:uid(),type:'task',title:'閱讀指定教材',date:'',time:'',duration:60,priority:'low',note:'',done:false},
+    {id:uid(),type:'task',title:'整理下週待辦清單',date:'',time:'',duration:30,priority:'normal',note:'',done:false}
+  ];
+}
+
+function load(){
+  try {
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed=JSON.parse(raw);
+      if(Array.isArray(parsed)) items=parsed;
+      else items=seedData();
+    } else items=seedData();
+  } catch(e) {
+    console.error('讀取資料失敗',e);
+    items=seedData();
+  }
+}
+function save(){
+  try {
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(items));
+  } catch(e) {
+    console.error('儲存失敗',e);
+    showToast('資料儲存失敗，請檢查裝置空間');
+  }
+}
+function showToast(message){
+  const el=$('toast');
+  el.textContent=message;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+function sorted(list){
+  return [...list].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+}
+function getEvents(date){
+  return sorted(items.filter(x=>x.type==='event'&&x.date===dateKey(date)));
+}
+function getTasks(){
+  return items.filter(x=>x.type==='task');
+}
+function updateHeader(){
+  const h=today.getHours();
+  $('pageTitle').textContent=(h<11?'早安，同學 ☀️':h<18?'午安，同學 🌿':'晚安，同學 🌙');
+  $('greeting').textContent=today.toLocaleDateString('zh-TW',{weekday:'long',month:'long',day:'numeric'});
+  $('todayDate').textContent=today.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
+  $('welcomeText').textContent=`今天有 ${getEvents(today).length} 個行程，慢慢完成重要的事。`;
+}
+function updateStats(){
+  const day=dateKey(today);
+  const events=getEvents(today);
+  const tasks=getTasks();
+  const pending=tasks.filter(x=>!x.done);
+  $('eventStat').textContent=events.length;
+  $('taskStat').textContent=pending.length;
+  const busy=events.reduce((sum,x)=>sum+(Number(x.duration)||0),0);
+  $('freeStat').textContent=`${Math.max(0,Math.round((600-busy)/60*10)/10)} 小時`;
+  $('navTaskCount').textContent=pending.length;
+  $('allCount').textContent=tasks.length;
+  $('todayCount').textContent=tasks.filter(x=>x.date===day).length;
+  $('unscheduledCount').textContent=tasks.filter(x=>!x.date).length;
+  $('welcomeText').textContent=`今天有 ${events.length} 個行程，還有 ${pending.length} 件待辦任務。`;
+}
+function renderTimeline(){
+  const d=selectedDate, key=dateKey(d);
+  $('dayLabel').textContent=key===dateKey(today)?'今天':fmt(d);
+  $('timelineSub').textContent=`${weekday(d)} · ${fmt(d)} · 上午 8:00 – 下午 6:00`;
+  const list=getEvents(d);
+  const container=$('timeline');
+  container.innerHTML='';
+  for(let hour=8;hour<=18;hour++){
+    const row=document.createElement('div');
+    row.className='time-row';
+    const label=document.createElement('div');
+    label.className='time-label';
+    label.textContent=String(hour).padStart(2,'0')+':00';
+    const slot=document.createElement('div');
+    slot.className='time-slot';
+    const matches=list.filter(x=>x.time&&Number(x.time.slice(0,2))===hour);
+    matches.forEach(ev=>{
+      const card=document.createElement('div');
+      card.className='event '+(ev.priority==='low'?'mint':ev.priority==='high'?'peach':'');
+      card.innerHTML=`<div><h3>${escapeHTML(ev.title)}</h3><p>${escapeHTML(ev.time)} · ${ev.duration} 分鐘</p></div><div><button type="button" data-edit="${ev.id}" aria-label="編輯行程">編輯</button><button type="button" data-delete="${ev.id}" aria-label="刪除行程">刪除</button></div>`;
+      slot.appendChild(card);
+    });
+    if(!matches.length){
+      const empty=document.createElement('div');
+      empty.style.cssText='font-size:10px;color:#c0c8d4;padding:8px 9px';
+      empty.textContent='空閒時間';
+      slot.appendChild(empty);
+    }
+    row.append(label,slot);
+    container.appendChild(row);
+  }
+}
+function renderTasks(){
+  const list=getTasks().filter(x=>{
+    if(filter==='today')return x.date===dateKey(today);
+    if(filter==='unscheduled')return !x.date;
+    return true;
+  }).sort((a,b)=>Number(a.done)-Number(b.done)||(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  const el=$('taskList');
+  if(!list.length){
+    el.innerHTML='<div class="empty">目前沒有符合條件的任務 ✨</div>';
+    return;
+  }
+  el.innerHTML=list.map(x=>`
+    <div class="task ${x.done?'done-task':''}">
+      <button class="check ${x.done?'done':''}" data-toggle="${x.id}" aria-label="${x.done?'標記未完成':'標記完成'}">${x.done?'✓':''}</button>
+      <div class="task-copy">
+        <strong>${escapeHTML(x.title)}</strong>
+        <small><span class="priority ${x.priority==='low'?'low':''}"></span>${x.priority==='high'?'重要':x.priority==='low'?'有空再做':'一般'} · ${x.date?escapeHTML(x.date):'未排程'} ${x.time?'· '+escapeHTML(x.time):''} ${x.note?'· '+escapeHTML(x.note):''}</small>
+      </div>
+      <div class="task-actions"><button data-edit="${x.id}" aria-label="編輯任務">✎</button><button data-delete="${x.id}" aria-label="刪除任務">×</button></div>
+    </div>`).join('');
+}
+function renderWeek(){
+  const d=new Date(selectedDate);
+  const monday=addDays(d,-((d.getDay()+6)%7));
+  $('weekStrip').innerHTML=Array.from({length:7},(_,i)=>{
+    const day=addDays(monday,i), key=dateKey(day);
+    const count=items.filter(x=>x.date===key).length;
+    return `<div class="weekday ${key===dateKey(today)?'today':''}" data-day="${key}" role="button" tabindex="0"><span>${['一','二','三','四','五','六','日'][i]}</span><b>${day.getDate()}</b><span class="mark" style="${count?'':'visibility:hidden'}"></span></div>`;
+  }).join('');
+}
+function render(){
+  updateHeader();updateStats();renderTimeline();renderTasks();renderWeek();
+  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));
+  $('crumbTitle').textContent=currentView==='today'?'今日總覽':currentView==='tasks'?'所有任務':'週視圖';
+  if(currentView==='tasks')filter='all';
+  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));
+}
+function openModal(type='task',item=null){
+  $('itemForm').reset();
+  $('editId').value=item?.id||'';
+  $('itemType').value=item?.type||type;
+  $('modalTitle').textContent=item?'編輯項目':'新增項目';
+  $('itemTitle').value=item?.title||'';
+  $('itemDate').value=item?.date||dateKey(selectedDate);
+  $('itemTime').value=item?.time||'';
+  $('itemDuration').value=String(item?.duration||60);
+  $('itemPriority').value=item?.priority||'normal';
+  $('itemNote').value=item?.note||'';
+  document.querySelectorAll('[data-type]').forEach(b=>b.classList.toggle('chosen',b.dataset.type===$('itemType').value));
+  $('modalOverlay').classList.add('open');
+  setTimeout(()=>$('itemTitle').focus(),50);
+}
+function closeModal(){
+  $('modalOverlay').classList.remove('open');
+}
+function editItem(id){
+  const item=items.find(x=>x.id===id);
+  if(item)openModal(item.type,item);
+}
+function deleteItem(id){
+  const item=items.find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm(`確定刪除「${item.title}」嗎？`))return;
+  items=items.filter(x=>x.id!==id);
+  save();render();showToast('已刪除項目');
+}
+function switchView(view){
+  currentView=view;
+  if(view==='tasks')filter='all';
+  render();
+  if(view==='tasks')document.querySelector('.tasks-panel').scrollIntoView({behavior:'smooth',block:'start'});
+  if(view==='week')document.querySelector('.week-panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+$('addOpen').addEventListener('click',()=>openModal('task'));
+$('taskAdd').addEventListener('click',()=>openModal('task'));
+$('closeModal').addEventListener('click',closeModal);
+$('cancelModal').addEventListener('click',closeModal);
+$('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+document.querySelectorAll('[data-type]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    $('itemType').value=b.dataset.type;
+    document.querySelectorAll('[data-type]').forEach(x=>x.classList.toggle('chosen',x===b));
+  });
+});
+
+$('itemForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const title=$('itemTitle').value.trim();
+  if(!title){$('itemTitle').focus();return;}
+  const id=$('editId').value;
+  const old=items.find(x=>x.id===id);
+  const entry={
+    id:id||uid(),
+    type:$('itemType').value,
+    title,
+    date:$('itemDate').value,
+    time:$('itemTime').value,
+    duration:Number($('itemDuration').value),
+    priority:$('itemPriority').value,
+    note:$('itemNote').value.trim(),
+    done:old?.done||false
+  };
+  if(entry.type==='task'&&!entry.date)entry.time='';
+  if(old)items=items.map(x=>x.id===id?entry:x);
+  else items.push(entry);
+  save();closeModal();render();
+  showToast(old?'項目已更新':'新增成功！');
+});
+
+$('taskList').addEventListener('click',e=>{
+  const toggle=e.target.closest('[data-toggle]');
+  const edit=e.target.closest('[data-edit]');
+  const del=e.target.closest('[data-delete]');
+  if(toggle){
+    const item=items.find(x=>x.id===toggle.dataset.toggle);
+    if(item){item.done=!item.done;save();render();showToast(item.done?'完成一項任務！':'已恢復未完成');}
+  } else if(edit)editItem(edit.dataset.edit);
+  else if(del)deleteItem(del.dataset.delete);
+});
+$('timeline').addEventListener('click',e=>{
+  const edit=e.target.closest('[data-edit]');
+  const del=e.target.closest('[data-delete]');
+  if(edit)editItem(edit.dataset.edit);
+  else if(del)deleteItem(del.dataset.delete);
+});
+
+document.querySelectorAll('[data-filter]').forEach(b=>{
+  b.addEventListener('click',()=>{filter=b.dataset.filter;renderTasks();document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));});
+});
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.nav)));
+
+$('prevDay').addEventListener('click',()=>{selectedDate=addDays(selectedDate,-1);render();});
+$('nextDay').addEventListener('click',()=>{selectedDate=addDays(selectedDate,1);render();});
+$('weekStrip').addEventListener('click',e=>{
+  const day=e.target.closest('[data-day]');
+  if(day){selectedDate=parseDate(day.dataset.day);switchView('today');}
+});
+$('weekStrip').addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-day]')){
+    e.preventDefault();selectedDate=parseDate(e.target.dataset.day);switchView('today');
+  }
+});
+$('bellBtn').addEventListener('click',()=>showToast('目前沒有新的通知'));
+$('settingsBtn').addEventListener('click',()=>{
+  const action=confirm('要清除本機儲存的所有 Daylight 資料嗎？此操作無法復原。');
+  if(action){
+    if(confirm('再次確認：確定刪除全部任務與行程？')){
+      items=[];save();render();showToast('資料已清除');
+    }
+  }
+});
+
+/* Firebase Google 登入設定
+   請填入自己的 Firebase Web App 設定。
+   登入功能與本機資料保存彼此獨立。 */
+const FIREBASE_CONFIG={
+  apiKey:"YOUR_API_KEY",
+  authDomain:"YOUR_PROJECT.firebaseapp.com",
+  projectId:"YOUR_PROJECT_ID",
+  appId:"YOUR_APP_ID"
+};
+const configured=Object.values(FIREBASE_CONFIG).every(v=>v&&!v.startsWith('YOUR_'));
+$('googleLoginBtn').addEventListener('click',async()=>{
+  if(!configured){
+    showToast('請先填入 Firebase 設定');
+    return;
+  }
+  try{
+    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js');
+    const {getAuth,GoogleAuthProvider,signInWithPopup}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+    const app=initializeApp(FIREBASE_CONFIG);
+    const auth=getAuth(app);
+    const provider=new GoogleAuthProvider();
+    const result=await signInWithPopup(auth,provider);
+    setAccount(result.user);
+    showToast('Google 登入成功');
+  }catch(error){
+    console.error(error);
+    showToast('登入失敗：'+(error.code||'請檢查 Firebase 設定'));
+  }
+});
+function setAccount(user){
+  $('accountName').textContent=user.displayName||user.email||'已登入';
+  $('accountHint').textContent=user.email||'Google 帳戶';
+  $('profileName').textContent=user.displayName||'使用者';
+  $('profileAvatar').textContent=(user.displayName||'U').charAt(0);
+  $('googleLoginBtn').hidden=true;
+  $('signOutBtn').hidden=false;
+}
+$('signOutBtn').addEventListener('click',async()=>{
+  try{
+    const {getAuth,signOut}=await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js');
+    await signOut(getAuth());
+    $('accountName').textContent='訪客模式';
+    $('accountHint').textContent='資料保存在目前裝置';
+    $('profileName').textContent='林同學';
+    $('profileAvatar').textContent='林';
+    $('googleLoginBtn').hidden=false;
+    $('signOutBtn').hidden=true;
+    showToast('已登出');
+  }catch(e){console.error(e);showToast('登出失敗');}
+});
+
+load();
+render();
+})();
+</script>
+</body>
+</html>
